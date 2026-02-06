@@ -1,163 +1,147 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Cooldown Viewer - Lock Edition",
-    LoadingTitle = "Carregando...",
-    LoadingSubtitle = "by Thi🇧🇷",
-    ConfigurationSaving = {
-        Enabled = false,
-        FolderName = nil, 
-        FileName = "CooldownViewer"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvitelink", 
-        RememberJoins = true 
-    },
+    Name = "Multi-Script Hub | By Thi🇧🇷",
+    LoadingTitle = "Carregando Painel...",
+    LoadingSubtitle = "By Thi-maker",
+    ConfigurationSaving = { Enabled = false },
     KeySystem = false, 
 })
 
-local Tab = Window:CreateTab("Principal", 4483362458)
-local Section = Tab:CreateSection("Monitoramento de Skills")
-
--- Serviços
+-- ==========================================
+-- SERVIÇOS E VARIÁVEIS
+-- ==========================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
--- Variáveis de Controle
+local player = Players.LocalPlayer
 local ViewerEnabled = false
 local UpdateLoop = nil
-local CreatedGuis = {} 
+local CreatedGuis = {}
 
--- Função principal de verificação de status
+-- ==========================================
+-- ABAS
+-- ==========================================
+local TabMain = Window:CreateTab("Cooldown Viewer", 4483362458)
+local TabCombat = Window:CreateTab("Combat", 4483362458)
+local TabFarm = Window:CreateTab("Auto Farm", 4483362458)
+
+-- ==========================================
+-- [LÓGICA] COOLDOWN VIEWER
+-- ==========================================
 local function GetToolStatus(tool)
     local name = tool.Name
+    local cooldownTime = tool:GetAttribute("Cooldown") or tool:GetAttribute("CD") or tool:FindFirstChild("Cooldown")
     
-    -- Tenta pegar um valor de tempo (apenas para exibição informativa se existir)
-    local cooldownTime = tool:GetAttribute("Cooldown") or tool:GetAttribute("CD") or tool:GetAttribute("Reload")
-    
-    if not cooldownTime then
-        local valObj = tool:FindFirstChild("Cooldown") or tool:FindFirstChild("ReloadTime")
-        if valObj and (valObj:IsA("NumberValue") or valObj:IsA("IntValue")) then
-            cooldownTime = valObj.Value
-        end
-    end
-    
-    -- LÓGICA VISUAL
     if tool.Enabled then
-        -- ESTADO: PRONTO (Verde com círculo)
         return string.format('<font color="rgb(0,255,0)">🟢 %s [PRONTO]</font>', name)
     else
-        -- ESTADO: EM COOLDOWN (Vermelho com CADEADO 🔒)
-        local timeText = cooldownTime and tostring(cooldownTime).."s" or "..."
+        local timeText = (type(cooldownTime) == "number") and tostring(cooldownTime).."s" or "..."
         return string.format('<font color="rgb(255,0,0)">🔒 %s [CD: %s]</font>', name, timeText)
     end
 end
 
--- Função para criar/atualizar a BillboardGui
-local function UpdateBillboard(player)
-    -- Verifica se o player e o personagem existem
-    if not player or not player.Character then return end
+local function UpdateBillboard(p)
+    if not p.Character or not p.Character:FindFirstChild("Head") then return end
+    local head = p.Character.Head
+    local bgui = head:FindFirstChild("CD_Viewer_ESP")
     
-    local head = player.Character:FindFirstChild("Head")
-    if not head then return end
-    
-    local guiName = "CD_Viewer_ESP"
-    
-    -- Cria a GUI se não existir
-    local bgui = head:FindFirstChild(guiName)
     if not bgui then
         bgui = Instance.new("BillboardGui")
-        bgui.Name = guiName
+        bgui.Name = "CD_Viewer_ESP"
         bgui.Size = UDim2.new(0, 200, 0, 150)
-        bgui.StudsOffset = Vector3.new(0, 4.5, 0) -- Levemente mais alto para não atrapalhar o nome
+        bgui.StudsOffset = Vector3.new(0, 4.5, 0)
         bgui.AlwaysOnTop = true
         bgui.Parent = head
         
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Parent = bgui
+        local textLabel = Instance.new("TextLabel", bgui)
         textLabel.Size = UDim2.new(1, 0, 1, 0)
         textLabel.BackgroundTransparency = 1
-        textLabel.TextStrokeTransparency = 0 -- Borda preta para leitura
-        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+        textLabel.TextStrokeTransparency = 0
         textLabel.TextSize = 13
         textLabel.Font = Enum.Font.GothamBold
-        textLabel.RichText = true -- Habilita formatação HTML para cores e ícones
+        textLabel.RichText = true
         textLabel.TextYAlignment = Enum.TextYAlignment.Bottom
-        
         table.insert(CreatedGuis, bgui)
     end
     
     local label = bgui:FindFirstChildOfClass("TextLabel")
-    local contentText = ""
+    local content = ""
     
-    -- 1. Verifica Tools equipadas (no Character)
-    for _, item in pairs(player.Character:GetChildren()) do
-        if item:IsA("Tool") then
-            contentText = contentText .. GetToolStatus(item) .. "\n"
+    -- Checa Personagem
+    for _, item in pairs(p.Character:GetChildren()) do
+        if item:IsA("Tool") then content = content .. GetToolStatus(item) .. "\n" end
+    end
+    -- Checa Mochila
+    if p:FindFirstChild("Backpack") then
+        for _, item in pairs(p.Backpack:GetChildren()) do
+            if item:IsA("Tool") then content = content .. GetToolStatus(item) .. "\n" end
         end
     end
-    
-    -- 2. Verifica Tools guardadas (na Backpack)
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") then
-                contentText = contentText .. GetToolStatus(item) .. "\n"
-            end
-        end
-    end
-    
-    label.Text = contentText
+    label.Text = content
 end
 
--- Limpa todas as GUIs
-local function ClearAll()
-    for _, gui in pairs(CreatedGuis) do
-        if gui and gui.Parent then
-            gui:Destroy()
-        end
-    end
-    CreatedGuis = {}
-    
-    -- Varredura extra de segurança
-    for _, p in pairs(Players:GetPlayers()) do
-        if p.Character and p.Character:FindFirstChild("Head") then
-            local old = p.Character.Head:FindFirstChild("CD_Viewer_ESP")
-            if old then old:Destroy() end
-        end
-    end
-end
-
-local Toggle = Tab:CreateToggle({
-    Name = "Ativar Visualizador (Com Cadeado 🔒)",
+TabMain:CreateToggle({
+    Name = "Ativar Cooldown Viewer (🔒)",
     CurrentValue = false,
-    Flag = "CooldownToggle", 
     Callback = function(Value)
         ViewerEnabled = Value
-        
-        if ViewerEnabled then
-            -- Loop rápido
+        if Value then
             UpdateLoop = RunService.RenderStepped:Connect(function()
-                for _, player in pairs(Players:GetPlayers()) do
-                    pcall(function()
-                        UpdateBillboard(player)
-                    end)
+                for _, p in pairs(Players:GetPlayers()) do 
+                    pcall(function() UpdateBillboard(p) end) 
                 end
             end)
         else
-            if UpdateLoop then
-                UpdateLoop:Disconnect()
-                UpdateLoop = nil
-            end
-            ClearAll()
+            if UpdateLoop then UpdateLoop:Disconnect() end
+            for _, g in pairs(CreatedGuis) do if g.Parent then g:Destroy() end end
+            CreatedGuis = {}
         end
     end,
 })
 
+-- ==========================================
+-- [LÓGICA] COMBAT
+-- ==========================================
+TabCombat:CreateSection("Scripts de Luta")
+
+TabCombat:CreateButton({
+    Name = "Executar Combat Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Thi-maker/CombatButton/refs/heads/main/Combat"))()
+    end,
+})
+
+-- ==========================================
+-- [LÓGICA] AUTO FARM
+-- ==========================================
+local farming = false
+TabFarm:CreateSection("Farm de Moedas")
+
+TabFarm:CreateToggle({
+    Name = "Auto Farm Coins (Puxar)",
+    CurrentValue = false,
+    Callback = function(Value)
+        farming = Value
+        task.spawn(function()
+            while farming do
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if obj:IsA("BasePart") and obj.Name == "Coin" then
+                            obj.CFrame = hrp.CFrame + Vector3.new(0, 2, 0)
+                        end
+                    end
+                end
+                task.wait(0.3)
+            end
+        end)
+    end,
+})
+
 Rayfield:Notify({
-    Title = "Script Carregado",
-    Content = "Ícone de Cooldown alterado para 🔒",
+    Title = "Executado com Sucesso!",
+    Content = "Script Hub by Thi 🇧🇷",
     Duration = 5,
     Image = 4483362458,
 })
