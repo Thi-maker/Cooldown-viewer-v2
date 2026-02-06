@@ -1,7 +1,7 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Multi-Script Hub | By Thi🇧🇷",
+    Name = "Multi-Script Hub | By Thi 🇧🇷",
     LoadingTitle = "Carregando Painel...",
     LoadingSubtitle = "By Thi-maker",
     ConfigurationSaving = { Enabled = false },
@@ -67,11 +67,9 @@ local function UpdateBillboard(p)
     local label = bgui:FindFirstChildOfClass("TextLabel")
     local content = ""
     
-    -- Checa Personagem
     for _, item in pairs(p.Character:GetChildren()) do
         if item:IsA("Tool") then content = content .. GetToolStatus(item) .. "\n" end
     end
-    -- Checa Mochila
     if p:FindFirstChild("Backpack") then
         for _, item in pairs(p.Backpack:GetChildren()) do
             if item:IsA("Tool") then content = content .. GetToolStatus(item) .. "\n" end
@@ -100,14 +98,28 @@ TabMain:CreateToggle({
 })
 
 -- ==========================================
--- [LÓGICA] COMBAT
+-- [LÓGICA] COMBAT (TODOS OS SCRIPTS)
 -- ==========================================
-TabCombat:CreateSection("Scripts de Luta")
+TabCombat:CreateSection("Ferramentas de Combate")
 
 TabCombat:CreateButton({
     Name = "Executar Combat Script",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Thi-maker/CombatButton/refs/heads/main/Combat"))()
+    end,
+})
+
+TabCombat:CreateButton({
+    Name = "Executar Hitbox Expander",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Vcsk/RobloxScripts/main/HitboxExpander.lua"))()
+    end,
+})
+
+TabCombat:CreateButton({
+    Name = "Executar Runch Button",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Thi-maker/Runch-button/refs/heads/main/Runchbutton"))()
     end,
 })
 
@@ -140,8 +152,8 @@ TabFarm:CreateToggle({
 })
 
 Rayfield:Notify({
-    Title = "Executado com Sucesso!",
-    Content = "Script Hub by Thi 🇧🇷",
+    Title = "Thi 🇧🇷 Hub",
+    Content = "Painel de Combate e Farm carregado com sucesso!",
     Duration = 5,
     Image = 4483362458,
 })
