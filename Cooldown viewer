@@ -13,6 +13,7 @@ local Window = Rayfield:CreateWindow({
 -- ==========================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local ViewerEnabled = false
 local UpdateLoop = nil
@@ -98,7 +99,7 @@ TabMain:CreateToggle({
 })
 
 -- ==========================================
--- [LÓGICA] COMBAT (TODOS OS SCRIPTS)
+-- [LÓGICA] COMBAT
 -- ==========================================
 TabCombat:CreateSection("Ferramentas de Combate")
 
@@ -116,10 +117,110 @@ TabCombat:CreateButton({
     end,
 })
 
+-- BOTÃO RUNCH COM O CÓDIGO INTERNO
 TabCombat:CreateButton({
-    Name = "Executar Runch Button",
+    Name = "Executar Runch (Botão Arrastável)",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Thi-maker/Runch-button/refs/heads/main/Runchbutton"))()
+        -- CÓDIGO DO RUNCH SYSTEM
+        local LocalPlayer = Players.LocalPlayer
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+        if playerGui:FindFirstChild("RunchSystemGUI") then
+            playerGui.RunchSystemGUI:Destroy()
+        end
+
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "RunchSystemGUI"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Name = "DragBorder"
+        mainFrame.Size = UDim2.new(0, 180, 0, 70) 
+        mainFrame.Position = UDim2.new(0.5, -90, 0.8, 0)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        mainFrame.BorderSizePixel = 0
+        mainFrame.Active = true
+        mainFrame.Parent = screenGui
+
+        local borderCorner = Instance.new("UICorner")
+        borderCorner.CornerRadius = UDim.new(0, 15)
+        borderCorner.Parent = mainFrame
+
+        local actionButton = Instance.new("TextButton")
+        actionButton.Name = "ActivateBtn"
+        actionButton.Size = UDim2.new(1, -20, 1, -20)
+        actionButton.Position = UDim2.new(0, 10, 0, 10)
+        actionButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        actionButton.Text = "ATIVAR"
+        actionButton.Font = Enum.Font.GothamBold
+        actionButton.TextSize = 20
+        actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        actionButton.Parent = mainFrame
+
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 10)
+        btnCorner.Parent = actionButton
+
+        local dragLabel = Instance.new("TextLabel")
+        dragLabel.Text = "Arraste aqui"
+        dragLabel.Size = UDim2.new(1, 0, 0, 10)
+        dragLabel.Position = UDim2.new(0, 0, 1, -8)
+        dragLabel.BackgroundTransparency = 1
+        dragLabel.TextSize = 9
+        dragLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        dragLabel.Parent = mainFrame
+
+        -- Lógica de Arrastar
+        local function makeDraggable(guiObject)
+            local dragging, dragInput, dragStart, startPos
+            guiObject.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    dragStart = input.Position
+                    startPos = guiObject.Position
+                    input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+                end
+            end)
+            guiObject.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
+            UserInputService.InputChanged:Connect(function(input)
+                if input == dragInput and dragging then
+                    local delta = input.Position - dragStart
+                    guiObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                end
+            end)
+        end
+        makeDraggable(mainFrame)
+
+        -- Lógica de Cooldown
+        local isCooldown = false
+        local COOLDOWN_TIME = 15
+        actionButton.MouseButton1Click:Connect(function()
+            if isCooldown then return end
+            local character = LocalPlayer.Character
+            if not character then return end
+            local runchFolder = character:FindFirstChild("Runch ")
+            local event = runchFolder and runchFolder:FindFirstChild("Event")
+
+            if runchFolder and event then
+                event:FireServer()
+                isCooldown = true
+                actionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                for i = COOLDOWN_TIME, 1, -1 do
+                    actionButton.Text = tostring(i) .. "s"
+                    task.wait(1)
+                end
+                isCooldown = false
+                actionButton.Text = "ATIVAR"
+                actionButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+            else
+                actionButton.Text = "Sem Runch"
+                actionButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+                task.wait(1)
+                actionButton.Text = "ATIVAR"
+                actionButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+            end
+        end)
     end,
 })
 
@@ -153,7 +254,7 @@ TabFarm:CreateToggle({
 
 Rayfield:Notify({
     Title = "Thi 🇧🇷 Hub",
-    Content = "Painel de Combate e Farm carregado com sucesso!",
+    Content = "Tudo pronto! Aproveite os scripts.",
     Duration = 5,
     Image = 4483362458,
 })
