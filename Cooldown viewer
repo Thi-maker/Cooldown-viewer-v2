@@ -1,9 +1,9 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Cooldown Viewer v2",
+    Name = "Cooldown Viewer - Lock Edition",
     LoadingTitle = "Carregando...",
-    LoadingSubtitle = "by Thi",
+    LoadingSubtitle = "by Gemini",
     ConfigurationSaving = {
         Enabled = false,
         FolderName = nil, 
@@ -33,7 +33,7 @@ local CreatedGuis = {}
 local function GetToolStatus(tool)
     local name = tool.Name
     
-    -- Tenta pegar um valor de tempo (apenas para exibição informativa)
+    -- Tenta pegar um valor de tempo (apenas para exibição informativa se existir)
     local cooldownTime = tool:GetAttribute("Cooldown") or tool:GetAttribute("CD") or tool:GetAttribute("Reload")
     
     if not cooldownTime then
@@ -43,15 +43,14 @@ local function GetToolStatus(tool)
         end
     end
     
-    -- LÓGICA DE CORES
-    -- A maioria das tools do Roblox fica com .Enabled = false quando usada
+    -- LÓGICA VISUAL
     if tool.Enabled then
-        -- ESTADO: PRONTO
+        -- ESTADO: PRONTO (Verde com círculo)
         return string.format('<font color="rgb(0,255,0)">🟢 %s [PRONTO]</font>', name)
     else
-        -- ESTADO: EM COOLDOWN (Vermelho)
+        -- ESTADO: EM COOLDOWN (Vermelho com CADEADO 🔒)
         local timeText = cooldownTime and tostring(cooldownTime).."s" or "..."
-        return string.format('<font color="rgb(255,0,0)">🔴 %s [CD: %s]</font>', name, timeText)
+        return string.format('<font color="rgb(255,0,0)">🔒 %s [CD: %s]</font>', name, timeText)
     end
 end
 
@@ -71,7 +70,7 @@ local function UpdateBillboard(player)
         bgui = Instance.new("BillboardGui")
         bgui.Name = guiName
         bgui.Size = UDim2.new(0, 200, 0, 150)
-        bgui.StudsOffset = Vector3.new(0, 4, 0) -- Fica 4 studs acima da cabeça
+        bgui.StudsOffset = Vector3.new(0, 4.5, 0) -- Levemente mais alto para não atrapalhar o nome
         bgui.AlwaysOnTop = true
         bgui.Parent = head
         
@@ -83,7 +82,7 @@ local function UpdateBillboard(player)
         textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
         textLabel.TextSize = 13
         textLabel.Font = Enum.Font.GothamBold
-        textLabel.RichText = true -- Permite usar cores HTML na string
+        textLabel.RichText = true -- Habilita formatação HTML para cores e ícones
         textLabel.TextYAlignment = Enum.TextYAlignment.Bottom
         
         table.insert(CreatedGuis, bgui)
@@ -131,17 +130,16 @@ local function ClearAll()
 end
 
 local Toggle = Tab:CreateToggle({
-    Name = "Ativar Visualizador de Cooldown",
+    Name = "Ativar Visualizador (Com Cadeado 🔒)",
     CurrentValue = false,
     Flag = "CooldownToggle", 
     Callback = function(Value)
         ViewerEnabled = Value
         
         if ViewerEnabled then
-            -- Loop rápido (RenderStepped) para atualização visual instantânea
+            -- Loop rápido
             UpdateLoop = RunService.RenderStepped:Connect(function()
                 for _, player in pairs(Players:GetPlayers()) do
-                    -- Envolve em pcall para evitar erros caso o player saia no meio do loop
                     pcall(function()
                         UpdateBillboard(player)
                     end)
@@ -158,8 +156,8 @@ local Toggle = Tab:CreateToggle({
 })
 
 Rayfield:Notify({
-    Title = "Script Atualizado",
-    Content = "Cooldowns agora ficam VERMELHOS quando ativos.",
+    Title = "Script Carregado",
+    Content = "Ícone de Cooldown alterado para 🔒",
     Duration = 5,
     Image = 4483362458,
 })
